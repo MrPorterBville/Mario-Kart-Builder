@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="Description" CONTENT="Build and compare karts for Mario Kart 8 Deluxe!">
+    <title>Mario Kart 8 Deluxe Builder 1.6</title>
+    
+
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <link rel="manifest" href="icons/site.webmanifest">
+    <link rel="mask-icon" href="icons/safari-pinned-tab.svg" color="#2d89ef">
+    <link rel="shortcut icon" href="icons/favicon.ico">
+    <meta name="msapplication-TileColor" content="#2d89ef">
+    <meta name="msapplication-config" content="icons/browserconfig.xml">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="Stylesheet" href="css/style.css">
+    <link rel="Stylesheet" href="css/ml-loading-bars.css">
+    <link href="css/Lobster.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+    <div class="wrapper">
+        <img src="img/logo.png" alt="Mario Kart 8 Deluxe" class="logo">
+        <div id="content"></div>
+    </div>
+    <div class="footer">
+        <img src="img/incomplete.png" width="10"/> The hidden stats data based on game version: 3.0.0 | <img src="img/drift.png"/> = Inward Drift<br />
+        <a href="//www.mariowiki.com/Mario_Kart_8_Deluxe" target="_blank">Super Mario Wiki</a> | <a href="//docs.google.com/spreadsheets/d/1g7A-38tn9UAIbB2B3sZI-MpILsS3ZS870UTVMRRxh4Q/edit#gid=0" target="_blank">Luigi_Fan2's MK8 Deluxe Stat Chart</a> | <a href="//japan-mk.blog.jp/mk8dx.wiki" target="_blank">Japan Mario Kart Blog</a><br />
+        Credit: Tobias Mattsson (Original Creator)<br />
+        Powered by Javascripts: <a href="//backbonejs.org/" target="_blank">backbone.js</a> | <a href="//marionettejs.com/" target="_blank">marionette.js</a> | <a href="//handlebarsjs.com/" target="_blank">handlebars.js</a><br />
+		Webmaster/maintaining stats: <a href="//old.reddit.com/user/Deafboy91/" target="_blank">u/Deafboy91</a> Any issues? Message me
+    </div>
+    <script id="main-layout-template" type="text/x-handlebars-template">
+        <table cellpadding="0" cellspacing="0" style="width: 940px">
+            <tr>
+                <td valign="top" style="width: 300px;">
+                    <div id="regionDrivers"></div>
+                </td>
+                <td style="width: 20px;"></td>
+                <td valign="top" style="width: 300px;">
+                    <div id="regionBodies"></div>
+                </td>
+                <td style="width: 20px;"></td>
+                <td valign="top" style="width: 300px;">
+                    <div id="regionTires"></div>
+                    <div id="regionGliders"></div>
+                </td>
+            </tr>
+            <tr>
+                <td valign="top">
+                    <div id="regionBuild1"></div>
+                </td>
+                <td style="width: 20px;"></td>
+                <td valign="top">
+                    <div id="regionBuild2"></div>
+                </td>
+                <td style="width: 20px;"></td>
+                <td valign="top">
+                    <div id="regionBuild3"></div>
+                </td>
+            </tr>
+        </table>
+    </script>
+
+
+    <script id="driver-template" type="text/x-handlebars">
+        <div class="{{#unless active}}item {{/unless}}{{#if active}}item-selected {{/if}}driver" style="position:relative">
+            <div class="icon-driver{{#if active}} icon-selected{{/if}}" style="background-image: url('img/drivers/{{name}}.png')" title="{{name}}" alt="{{name}}">
+                {{#if incomplete}}<div style="position:absolute;top:-7.5px;left:-7.5px;"><img src="img/new.png" /></div>{{/if}}
+            </div>
+        </div>
+    </script>
+    <script id="body-template" type="text/x-handlebars">
+        <div class="{{#unless active}}item {{/unless}}{{#if active}}item-selected {{/if}}body" style="position:relative">
+            <div class="icon-body{{#if active}} icon-selected{{/if}}" style="background-image: url('img/bodies/{{name}}.png')" title="{{name}}" alt="{{name}}">
+                {{#if incomplete}}<div style="position:absolute;top:3px;left:3px;"><img src="img/incomplete.png" /></div>{{/if}}
+                {{#if insideDrift}}<div style="position:absolute;bottom:0;right:3px;"><img src="img/drift.png" /></div>{{/if}}
+            </div>
+        </div>
+    </script>
+    <script id="tire-template" type="text/x-handlebars">
+        <div class="{{#unless active}}item {{/unless}}{{#if active}}item-selected {{/if}}tire">
+            <div class="icon-tire{{#if active}} icon-selected{{/if}}" style="background-image: url('img/tires/{{name}}.png');" title="{{name}}" alt="{{name}}"></div>
+        </div>
+    </script>
+    <script id="glider-template" type="text/x-handlebars">
+        <div class="{{#unless active}}item {{/unless}}{{#if active}}item-selected {{/if}}glider">
+            <div class="icon-glider{{#if active}} icon-selected{{/if}}" style="background-image: url('img/gliders/{{name}}.png');" title="{{name}}" alt="{{name}}"></div>
+        </div>
+    </script>
+
+    <script id="drivers-template" type="text/x-handlebars-template">
+        <h3>Drivers</h3>
+        <div></div>
+    </script>
+    <script id="bodies-template" type="text/x-handlebars-template">
+        <h3>Bodies</h3>
+        <div></div>
+    </script>
+    <script id="tires-template" type="text/x-handlebars-template">
+        <h3>Tires</h3>
+        <div></div>
+    </script>
+    <script id="gliders-template" type="text/x-handlebars-template">
+        <h3>Gliders</h3>
+        <div></div>
+    </script>
+
+    <script id="build1-template" type="text/x-handlebars-template">
+        <h3 class="{{#unless build1status}}selectable{{/unless}}{{#if build1status}}selected{{/if}}">Build 1</h3>
+        <div class="item-static">
+            {{#unless driver1.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Driver not set" alt="Driver not set"></div>
+            {{/unless}}
+				{{#if driver1.name}}<div class="icon-driver" style="background-image: url('img/drivers/{{driver1.name}}.png');" title="{{driver1.name}}" alt="{{driver1.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item-static">
+            {{#unless body1.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Body not set" alt="Body not set"></div>
+            {{/unless}}
+				{{#if body1.name}}<div class="icon-body" style="background-image: url('img/bodies/{{body1.name}}.png');" title="{{body1.name}}" alt="{{body1.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item-static">
+            {{#unless tire1.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Tires not set" alt="Tires not set"></div>
+            {{/unless}}
+				{{#if tire1.name}}<div class="icon-tire" style="background-image: url('img/tires/{{tire1.name}}.png');" title="{{tire1.name}}" alt="{{tire1.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item-static">
+            {{#unless glider1.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Glider not set" alt="Glider not set"></div>
+            {{/unless}}
+				{{#if glider1.name}}<div class="icon-glider" style="background-image: url('img/gliders/{{glider1.name}}.png');" title="{{glider1.name}}" alt="{{glider1.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item">
+            <div class="icon-glider clear" style="background-image: url('img/x.png');" title="Clear Build 1" alt="Clear Build 1"></div>
+        </div>
+
+        <h4>Speed (Ground, Water, Air, Anti-Gravity)</h4>
+        <div class="loading-container-def">
+            <div class="{{#if speedGnd1}}loading-progress-gnd{{/if}}" style="width: {{speedGnd1percent}}%" title="Ground Speed: {{speedGnd1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if speedWtr1}}loading-progress-wtr{{/if}}" style="width: {{speedWtr1percent}}%" title="Water Speed: {{speedWtr1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if speedAir1}}loading-progress-air{{/if}}" style="width: {{speedAir1percent}}%" title="Air Speed: {{speedAir1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if speedGty1}}loading-progress-gty{{/if}}" style="width: {{speedGty1percent}}%" title="Anti-Gravity Speed: {{speedGty1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+
+        <h4>Acceleration</h4>
+        <div class="loading-container-def">
+            <div class="{{#if acceleration1}}loading-progress-def{{/if}}" style="width: {{acceleration1percent}}%" title="Acceleration: {{acceleration1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <h4>Weight</h4>
+        <div class="loading-container-def">
+            <div class="{{#if weight1}}loading-progress-def{{/if}}" style="width: {{weight1percent}}%" title="Weight: {{weight1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+
+        <h4>Handling (Ground, Water, Air, Anti-Gravity)</h4>
+        <div class="loading-container-def">
+            <div class="{{#if handlingGnd1}}loading-progress-gnd{{/if}}" style="width: {{handlingGnd1percent}}%" title="Ground Handling: {{handlingGnd1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if handlingWtr1}}loading-progress-wtr{{/if}}" style="width: {{handlingWtr1percent}}%" title="Water Handling: {{handlingWtr1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if handlingAir1}}loading-progress-air{{/if}}" style="width: {{handlingAir1percent}}%" title="Air Handling: {{handlingAir1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if handlingGty1}}loading-progress-gty{{/if}}" style="width: {{handlingGty1percent}}%" title="Anti-Gravity Handling: {{handlingGty1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+
+        <h4>Traction (Grip)</h4>
+        <div class="loading-container-def">
+            <div class="{{#if grip1}}loading-progress-def{{/if}}" style="width: {{grip1percent}}%" title="Traction: {{grip1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <h4>Mini-Turbo</h4>
+        <div class="loading-container-def">
+            <div class="{{#if miniturbo1}}loading-progress-def{{/if}}" style="width: {{miniturbo1percent}}%" title="Mini-Turbo: {{miniturbo1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <h4>Invincibility</h4>
+        <div class="loading-container-def">
+            <div class="{{#if invincibility1}}loading-progress-def{{/if}}" style="width: {{invincibility1percent}}%" title="Invincibility: {{invincibility1}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+    </script>
+
+    <script id="build2-template" type="text/x-handlebars-template">
+        <h3 class="{{#unless build2status}}selectable{{/unless}}{{#if build2status}}selected{{/if}}">Build 2</h3>
+        <div class="item-static">
+            {{#unless driver2.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Driver not set" alt="Driver not set"></div>
+            {{/unless}}
+				{{#if driver2.name}}<div class="icon-driver" style="background-image: url('img/drivers/{{driver2.name}}.png');" title="{{driver2.name}}" alt="{{driver2.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item-static">
+            {{#unless body2.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Body not set" alt="Body not set"></div>
+            {{/unless}}
+				{{#if body2.name}}<div class="icon-body" style="background-image: url('img/bodies/{{body2.name}}.png');" title="{{body2.name}}" alt="{{body2.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item-static">
+            {{#unless tire2.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Tires not set" alt="Tires not set"></div>
+            {{/unless}}
+				{{#if tire2.name}}<div class="icon-tire" style="background-image: url('img/tires/{{tire2.name}}.png');" title="{{tire2.name}}" alt="{{tire2.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item-static">
+            {{#unless glider2.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Glider not set" alt="Glider not set"></div>
+            {{/unless}}
+				{{#if glider2.name}}<div class="icon-glider" style="background-image: url('img/gliders/{{glider2.name}}.png');" title="{{glider2.name}}" alt="{{glider2.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item">
+            <div class="icon-glider clear" style="background-image: url('img/x.png');" title="Clear Build 2" alt="Clear Build 2"></div>
+        </div>
+
+        <h4>Speed (Ground, Water, Air, Anti-Gravity)</h4>
+        <div class="loading-container-def">
+            <div class="{{#if speedGnd2}}loading-progress-gnd{{/if}}" style="width: {{speedGnd2percent}}%" title="Ground Speed: {{speedGnd2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if speedWtr2}}loading-progress-wtr{{/if}}" style="width: {{speedWtr2percent}}%" title="Water Speed: {{speedWtr2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if speedAir2}}loading-progress-air{{/if}}" style="width: {{speedAir2percent}}%" title="Air Speed: {{speedAir2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if speedGty2}}loading-progress-gty{{/if}}" style="width: {{speedGty2percent}}%" title="Anti-Gravity Speed: {{speedGty2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+
+        <h4>Acceleration</h4>
+        <div class="loading-container-def">
+            <div class="{{#if acceleration2}}loading-progress-def{{/if}}" style="width: {{acceleration2percent}}%" title="Acceleration: {{acceleration2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <h4>Weight</h4>
+        <div class="loading-container-def">
+            <div class="{{#if weight2}}loading-progress-def{{/if}}" style="width: {{weight2percent}}%" title="Weight: {{weight2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+
+        <h4>Handling (Ground, Water, Air, Anti-Gravity)</h4>
+        <div class="loading-container-def">
+            <div class="{{#if handlingGnd2}}loading-progress-gnd{{/if}}" style="width: {{handlingGnd2percent}}%" title="Ground Handling: {{handlingGnd2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if handlingWtr2}}loading-progress-wtr{{/if}}" style="width: {{handlingWtr2percent}}%" title="Water Handling: {{handlingWtr2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if handlingAir2}}loading-progress-air{{/if}}" style="width: {{handlingAir2percent}}%" title="Air Handling: {{handlingAir2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if handlingGty2}}loading-progress-gty{{/if}}" style="width: {{handlingGty2percent}}%" title="Anti-Gravity Handling: {{handlingGty2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+
+        <h4>Traction (Grip)</h4>
+        <div class="loading-container-def">
+            <div class="{{#if grip2}}loading-progress-def{{/if}}" style="width: {{grip2percent}}%" title="Traction: {{grip2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <h4>Mini-Turbo</h4>
+        <div class="loading-container-def">
+            <div class="{{#if miniturbo2}}loading-progress-def{{/if}}" style="width: {{miniturbo2percent}}%" title="Mini-Turbo: {{miniturbo2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <h4>Invincibility</h4>
+        <div class="loading-container-def">
+            <div class="{{#if invincibility2}}loading-progress-def{{/if}}" style="width: {{invincibility2percent}}%" title="Invincibility: {{invincibility2}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+    </script>
+
+    <script id="build3-template" type="text/x-handlebars-template">
+        <h3 class="{{#unless build3status}}selectable{{/unless}}{{#if build3status}}selected{{/if}}">Build 3</h3>
+        <div class="item-static">
+            {{#unless driver3.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Driver not set" alt="Driver not set"></div>
+            {{/unless}}
+				{{#if driver3.name}}<div class="icon-driver" style="background-image: url('img/drivers/{{driver3.name}}.png');" title="{{driver3.name}}" alt="{{driver3.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item-static">
+            {{#unless body3.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Body not set" alt="Body not set"></div>
+            {{/unless}}
+				{{#if body3.name}}<div class="icon-body" style="background-image: url('img/bodies/{{body3.name}}.png');" title="{{body3.name}}" alt="{{body3.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item-static">
+            {{#unless tire3.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Tires not set" alt="Tires not set"></div>
+            {{/unless}}
+				{{#if tire3.name}}<div class="icon-tire" style="background-image: url('img/tires/{{tire3.name}}.png');" title="{{tire3.name}}" alt="{{tire3.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item-static">
+            {{#unless glider3.name}}<div class="icon-glider" style="background-image: url('img/q.png');" title="Glider not set" alt="Glider not set"></div>
+            {{/unless}}
+				{{#if glider3.name}}<div class="icon-glider" style="background-image: url('img/gliders/{{glider3.name}}.png');" title="{{glider3.name}}" alt="{{glider3.name}}"></div>
+            {{/if}}
+        </div>
+        <div class="item">
+            <div class="icon-glider clear" style="background-image: url('img/x.png');" title="Clear Build 3" alt="Clear Build 3"></div>
+        </div>
+
+        <h4>Speed (Ground, Water, Air, Anti-Gravity)</h4>
+        <div class="loading-container-def">
+            <div class="{{#if speedGnd3}}loading-progress-gnd{{/if}}" style="width: {{speedGnd3percent}}%" title="Ground Speed: {{speedGnd3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if speedWtr3}}loading-progress-wtr{{/if}}" style="width: {{speedWtr3percent}}%" title="Water Speed: {{speedWtr3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if speedAir3}}loading-progress-air{{/if}}" style="width: {{speedAir3percent}}%" title="Air Speed: {{speedAir3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if speedGty3}}loading-progress-gty{{/if}}" style="width: {{speedGty3percent}}%" title="Anti-Gravity Speed: {{speedGty3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+
+        <h4>Acceleration</h4>
+        <div class="loading-container-def">
+            <div class="{{#if acceleration3}}loading-progress-def{{/if}}" style="width: {{acceleration3percent}}%" title="Acceleration: {{acceleration3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <h4>Weight</h4>
+        <div class="loading-container-def">
+            <div class="{{#if weight3}}loading-progress-def{{/if}}" style="width: {{weight3percent}}%" title="Weight: {{weight3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+
+        <h4>Handling (Ground, Water, Air, Anti-Gravity)</h4>
+        <div class="loading-container-def">
+            <div class="{{#if handlingGnd3}}loading-progress-gnd{{/if}}" style="width: {{handlingGnd3percent}}%" title="Ground Handling: {{handlingGnd3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if handlingWtr3}}loading-progress-wtr{{/if}}" style="width: {{handlingWtr3percent}}%" title="Water Handling: {{handlingWtr3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if handlingAir3}}loading-progress-air{{/if}}" style="width: {{handlingAir3percent}}%" title="Air Handling: {{handlingAir3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <div class="loading-container-def">
+            <div class="{{#if handlingGty3}}loading-progress-gty{{/if}}" style="width: {{handlingGty3percent}}%" title="Anti-Gravity Handling: {{handlingGty3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+
+        <h4>Traction (Grip)</h4>
+        <div class="loading-container-def">
+            <div class="{{#if grip3}}loading-progress-def{{/if}}" style="width: {{grip3percent}}%" title="Traction: {{grip3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <h4>Mini-Turbo</h4>
+        <div class="loading-container-def">
+            <div class="{{#if miniturbo3}}loading-progress-def{{/if}}" style="width: {{miniturbo3percent}}%" title="Mini-Turbo: {{miniturbo3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+        <h4>Invincibility</h4>
+        <div class="loading-container-def">
+            <div class="{{#if invincibility3}}loading-progress-def{{/if}}" style="width: {{invincibility3percent}}%" title="Invincibility: {{invincibility3}}">
+                <div class="gauge-meter"></div>
+            </div>
+        </div>
+    </script>
+
+
+
+    <!--<script type="text/javascript" src="js/lib/jquery-1.10.2.js"></script> -->
+	<script type="text/javascript" src="js/lib/jquery-3.2.1.js"></script>
+    <script type="text/javascript" src="js/lib/underscore-min.js"></script>
+    <script type="text/javascript" src="js/lib/backbone-min.js"></script>
+    <script type="text/javascript" src="js/lib/backbone.marionette.js"></script>
+    <script type="text/javascript" src="js/lib/handlebars-v1.3.0.js"></script>
+
+    <script type="text/javascript" src="js/models/model.js"></script>
+    <script type="text/javascript" src="js/models/driver.js"></script>
+    <script type="text/javascript" src="js/models/body.js"></script>
+    <script type="text/javascript" src="js/models/tire.js"></script>
+    <script type="text/javascript" src="js/models/glider.js"></script>
+
+    <script type="text/javascript" src="js/collections/drivers.js"></script>
+    <script type="text/javascript" src="js/collections/bodies.js"></script>
+    <script type="text/javascript" src="js/collections/tires.js"></script>
+    <script type="text/javascript" src="js/collections/gliders.js"></script>
+
+    <script type="text/javascript" src="js/views/views.js"></script>
+
+    <script type="text/javascript" src="js/app.js"></script>
+</body>
+</html>
